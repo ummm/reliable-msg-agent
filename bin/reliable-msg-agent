@@ -1,0 +1,61 @@
+#!/usr/bin/env ruby
+
+require "optparse"
+
+require "rubygems"
+require "reliable-msg/agent"
+
+parsers = {}
+options = {}
+
+parsers["start"] = OptionParser.new { |parser|
+  parser.program_name += " start"
+
+  parser.on("-v", "--verbose", "Verbose output") {
+    options[:verbose] = true
+  }
+  parser.on("-c", "--conf=CONFFILE", "Config file") { |v|
+    options[:conf] = v
+  }
+  parser.on("-l", "--log=LOGFILE", "Log file") { |v|
+    options[:log] = v
+  }
+  parser.on("-p", "--pid=PIDFILE", "PID file") { |v|
+    options[:pid] = v
+  }
+}
+parsers["stop"]  = OptionParser.new { |parser|
+  parser.program_name += " stop"
+
+  parser.on("-v", "--verbose", "Verbose output") {
+    options[:verbose] = true
+  }
+  parser.on("-p", "--pid=PIDFILE", "PID file (only for the daemon mode)") { |v|
+    options[:pid] = v
+  }
+}
+parsers.each { |k,v| parser = v
+  parser.version = ReliableMsg::Agent::Version::STRING
+
+  parser.on_tail("-h", "--help", "Show this message") {
+    $stderr.puts parser
+    exit
+  }
+  parser.on_tail("--version", "Show version") {
+    $stdout.puts ReliableMsg::Agent::Version::STRING
+    exit
+  }
+}
+
+subcommand = ARGV.shift
+unless parsers.keys.include?(subcommand)
+  $stderr.puts "#{File.basename($0, ".*")} available commands:"
+  $stderr.puts  parsers.keys.map { |cmd| "\t#{cmd}" }.join("\n")
+  $stderr.puts
+  exit 1
+end
+parsers[subcommand].parse! ARGV
+
+require "reliable-msg/agent/scripts/script_runner"
+ReliableMsg::Agent::ScriptRunner.new.send subcommand.to_sym, options
+

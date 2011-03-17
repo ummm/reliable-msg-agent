@@ -1,0 +1,90 @@
+== Reliable-msg-agent
+
+reliable-msg-agent is consumer for reliable-msg.
+
+The pull type approach that acquires the message accumulated
+in A and processes it is taken. 
+
+
+=== System configuration
+
+    +-------------+
+    | Application |
+    +-------------+
+          |
+          | Push Message
+          +
+    +-------------+
+    | ReliableMsg |+------+
+    +-------------+       |
+          +               | <-- Agent regularly acquires
+          |               |      the message from ReliableMsg.
+          +               +
+      +-------+       +-------+
+      | Agent |  ...  + Agent +
+      +-------+       +-------+
+
+== Getting started
+
+=== Install
+
+ gem install reliable-msg-agent
+
+=== Set configuration file
+
+* {GEM_INSTALL_DIR}/resources/agent.conf
+  please arrange agent.conf in appropriate path.
+  (default: /etc/reliable-msg-agent/agent.conf)
+* {GEM_INSTALL_DIR}/resources/agent.rb
+  please arrange agent.conf in appropriate path.
+  (default: /etc/reliable-msg-agent/agent.rb)
+
+== Reliable-msg-agent commands
+
+ $ reliable-msg-agent
+ reliable-msg-agent available commands:
+         stop
+         start
+
+=== start
+
+ $ reliable-msg-agent start --help
+ Usage: reliable-msg-agent start [options]
+     -v, --verbose                    Verbose output
+     -c, --conf=CONFFILE              Config file
+     -l, --log=LOGFILE                Log file
+     -p, --pid=PIDFILE                PID file
+     -h, --help                       Show this message
+         --version                    Show version
+
+* -v, --verbose
+  verbose output.
+* -c, --conf=CONFFILE
+  path for config file. default is /etc/reliable-msg-agent/agent.conf
+* -l, --log=LOGFILE
+  path for log file. default is /var/reliable-msg-agent/agent.log
+* -p, --pid=PIDFILE
+  path for pid file. default is /var/reliable-msg-agent/agent.pid
+* -h, --help
+  show this message.
+* --version
+  show version.
+
+=== stop
+
+ $ reliable-msg-agent stop --help
+ Usage: reliable-msg-agent stop [options]
+     -v, --verbose                    Verbose output
+     -p, --pid=PIDFILE                PID file (only for the daemon mode)
+     -h, --help                       Show this message
+         --version                    Show version
+
+* -v, --verbose
+  verbose output.
+* -p, --pid=PIDFILE
+  path for pid file. default is /var/reliable-msg-agent/agent.pid
+* -h, --help
+  show this message.
+* --version
+  show version.
+
