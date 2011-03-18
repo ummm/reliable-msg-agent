@@ -19,6 +19,9 @@ spec = Gem::Specification.new do |s|
   s.files = %w(History.txt MIT-LICENSE README.rdoc Rakefile) + Dir.glob("{bin,ext,lib,spec}/**/*")
   s.require_path = "lib"
   s.bindir = "bin"
+  s.author = "hamajyotan"
+  s.email = "hamajyotan@gmail.com"
+  s.homepage = "https://github.com/hamajyotan/reliable-msg-agent"
   
   s.add_dependency("reliable-msg")
 end
