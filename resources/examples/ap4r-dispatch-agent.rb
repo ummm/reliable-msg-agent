@@ -13,20 +13,13 @@ require "ap4r"
 # === Args
 #
 # +msg+     :: fetched message from reliable-msg queue.
+# +conf+    :: consumer configurations.
 # +options+ :: the options (it is still unused.)
 #
-def call msg, options = {}
+def call msg, conf, options = {}
 
   # The following codes use the mechanism of sending the message by ap4r.
-  conf = {
-    "modify_rules" => {
-      "url" => " Proc.new { |url| url.host = '127.0.0.1'; url } ",
-    },
-    "http" => {
-      "timeout" => 60,
-    },
-  }
-  dispatcher = Ap4r::Dispatchers.new nil, conf, @logger
+  dispatcher = Ap4r::Dispatchers.new nil, [], @logger
 
   @logger.debug { "dispatcher get message\n#{msg.to_yaml}" }
   response = dispatcher.send(:get_dispather_instance,

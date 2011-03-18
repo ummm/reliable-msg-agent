@@ -5,8 +5,18 @@ require "logger"
 
 describe ReliableMsg::Agent::Service do
   before do
-    l = Logger.new(nil)
-    @s = ReliableMsg::Agent::Service.new l
+    logger = Logger.new(nil)
+    conf = {
+      "consumers" => [
+        {
+          "source_uri" => "druby://localhost:6438",
+          "target"     => "queue.*",
+          "every"      => 1.0,
+          "threads"    => 1,
+        },
+      ],
+    }
+    @s = ReliableMsg::Agent::Service.new logger, conf
   end
 
   it "should be able to #start" do

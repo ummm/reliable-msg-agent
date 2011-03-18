@@ -10,7 +10,7 @@ module ReliableMsg::Agent #:nodoc:
       @logger  = logger
       @options = options
 
-      @workers = Workers.new @logger, @options
+      @workers = Consumers.new @logger, @options["consumers"]
       @locker = Monitor.new
     end
 
@@ -18,9 +18,9 @@ module ReliableMsg::Agent #:nodoc:
       @locker.synchronize {
         raise AgentError, "service already started." if alive?
 
-        @logger.info { "reliable-msg agent service starting..." }
+        @logger.info { "*** reliable-msg agent service starting..." }
         @workers.start
-        @logger.info { "reliable-msg agent service started." }
+        @logger.info { "*** reliable-msg agent service started." }
       }
     end
 
@@ -28,9 +28,9 @@ module ReliableMsg::Agent #:nodoc:
       @locker.synchronize {
         raise AgentError, "service already stopped." unless alive?
 
-        @logger.info { "reliable-msg agent service stopping..." }
+        @logger.info { "*** reliable-msg agent service stopping..." }
         @workers.stop
-        @logger.info { "reliable-msg agent service stopped." }
+        @logger.info { "*** reliable-msg agent service stopped." }
       }
     end
 

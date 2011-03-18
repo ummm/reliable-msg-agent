@@ -8,6 +8,17 @@ module ReliableMsg::Agent #:nodoc:
       @logger = logger
     end
  
+    # The method of processing the message is defined.
+    #
+    # if the evaluation result is nil or false,
+    # it is considered that it failes.
+    #
+    # === Args
+    #
+    # +msg+     :: fetched message from reliable-msg queue.
+    # +conf+    :: consumer configurations.
+    # +options+ :: the options (it is still unused.)
+    #
     def call msg, options = {}
       raise AgentError, "#call(msg,options={}) not implemented!"
     end   

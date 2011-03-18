@@ -1,4 +1,12 @@
 
+== 0.0.2 2011-03-19
+
+* resources/ was includ in gemfiles.
+* renamed workers to consumers.
+* refactored drb connect method.
+* changed Agent#call arguments 2 to 3.
+* added configuration examples to resources/
+
 == 0.0.1 2011-03-18
 
 * minimum feature

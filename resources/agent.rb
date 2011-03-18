@@ -12,9 +12,10 @@ require "yaml"
 # === Args
 #
 # +msg+     :: fetched message from reliable-msg queue.
+# +conf+    :: consumer configurations.
 # +options+ :: the options (it is still unused.)
 #
-def call msg, options = {}
+def call msg, conf, options = {}
   @logger.info { "message received\n#{msg.to_yaml}" }
 end
 
