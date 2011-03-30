@@ -19,8 +19,8 @@ module ReliableMsg::Agent #:nodoc:
     # +conf+    :: consumer configurations.
     # +options+ :: the options (it is still unused.)
     #
-    def call msg, options = {}
-      raise AgentError, "#call(msg,options={}) not implemented!"
+    def call msg, conf, options = {}
+      raise AgentError, "#call(msg,conf,options={}) not implemented!"
     end   
   end
 end

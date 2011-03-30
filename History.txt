@@ -1,4 +1,10 @@
 
+== 0.0.3 2011-03-31
+
+* Added testcase for Service class.
+* Changed target default. (queue.* to queue.agent)
+* bugfix: Message could not be acquired from ReliableMsg(!=Ap4r-queue)
+
 == 0.0.2 2011-03-19
 
 * resources/ was includ in gemfiles.

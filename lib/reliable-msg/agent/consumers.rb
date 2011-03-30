@@ -5,15 +5,35 @@ require "reliable-msg/agent"
 require "monitor"
 
 module ReliableMsg::Agent #:nodoc:
+
+  # Class of consumers for reliable-msg queue massaging.
+  #
+  # It has the function to make the agent acquire the message
+  # from ReliableMsg-Queue of the object and execute processing. 
+  #
   class Consumers
 
     @@default_options = {
       "source_uri" => "druby://localhost:6438",
-      "target"     => "queue.*",
+      "target"     => "queue.agent",
       "every"      => 1.0,
       "threads"    => 1,
     }.freeze
 
+    # Initialize.
+    #
+    # === Args
+    #
+    # +logger+  :: the logger.
+    # +options+ :: consumers options.
+    #
+    # valid options for +options+ are:
+    #
+    # +source_uri+ :: uri for source reliable-msg queue.
+    # +target+     :: target queue name for source reliable-msg queue.
+    # +every+      :: interval seconds when connection fails
+    # +threads+    :: times for consumer threads.
+    #
     def initialize logger, options
       @logger  = logger
       @options = options
@@ -22,6 +42,8 @@ module ReliableMsg::Agent #:nodoc:
       @threads = nil
     end
 
+    # Start consumers.
+    #
     def start
       @locker.synchronize {
         raise AgentError, "workers already started." if alive?
@@ -38,6 +60,8 @@ module ReliableMsg::Agent #:nodoc:
       }
     end
 
+    # Stop consumers.
+    #
     def stop
       @locker.synchronize {
         raise AgentError, "workers already stopped." unless alive?
@@ -51,10 +75,18 @@ module ReliableMsg::Agent #:nodoc:
       }
     end
 
+    # Return the state of alive or not alive.
+    #
     def alive?; @locker.synchronize { !! @threads }; end
 
     private
 
+    # Loop for consumer.
+    #
+    # === Args
+    #
+    # +conf+:: consumer configurations.
+    #
     def consuming_loop conf
       agent = Agent.new @logger
       uri, every, target = conf["source_uri"], conf["every"], conf["target"]
@@ -78,12 +110,22 @@ module ReliableMsg::Agent #:nodoc:
       end
     end
 
+    # Test for connect to reliable-msg queue manager.
+    # Returns valid queue-name.
+    #
+    # === Args
+    #
+    # +qm+     :: the queue manager.
+    # +target+ :: target queue name for source reliable-msg queue.
+    # +uri+    :: uri for source reliable-msg queue.
+    # +every+  :: interval seconds when connection fails
+    #
     def connect_qm qm, target, uri, every
       error_raised = false
       begin
-        queue_name = qm.stale_queue target
+        raise "queue-manager is not alive." unless qm.alive?
         @logger.warn { "Connect to #{uri} successfully at #{Time.now}" } if error_raised
-        return queue_name
+        return target
 
       rescue => e
         @logger.warn { "Lost connection to #{uri} at #{Time.now} - #{e.message}" } unless error_raised
@@ -94,6 +136,14 @@ module ReliableMsg::Agent #:nodoc:
       end
     end
 
+    # Fetch message from reliable-msg queue.
+    # Return evaluation result of yield.
+    #
+    # === Args
+    #
+    # +queue_name+ :: queue name for source reliable-msg queue.
+    # +source_uri+ :: uri for source reliable-msg queue.
+    #
     def fetch queue_name, source_uri
       ReliableMsg::Queue.new(queue_name, :drb_uri => source_uri).get { |m|
         begin
