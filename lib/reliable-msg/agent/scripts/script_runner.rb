@@ -17,28 +17,43 @@ module ReliableMsg::Agent #:nodoc:
 
       default_options = {
         :verbose => false,
-        :conf => "/etc/reliable-msg-agent/agent.conf",
+        :daemon => false,
+        :user => nil,
+        :group => nil,
+        :conf => File.expand_path(File.dirname(__FILE__) + "/../../../../resources/agent.conf"),
         :log => "/var/reliable-msg-agent/agent.log",
         :pid => "/var/reliable-msg-agent/agent.pid",
       }
       opt = default_options.merge options
       
       conf = load_configurations opt[:conf]
-      change_privilege conf
-      pidfile_accessible_test opt[:pid]
-      logger = create_logger conf["logger"], opt[:log]
+      change_privilege opt[:user], opt[:group]
+      pidfile_accessible_test opt[:pid] if opt[:daemon]
+      logger = if opt[:daemon]
+                 create_logger conf["logger"], opt[:log]
+               else
+                 create_logger conf["logger"], $stdout
+               end
 
       agent_definition conf["agent"]
 
-      daemonize(logger) {
+      if opt[:daemon]
+        daemonize(logger) {
+          service = Service.new logger, conf
+          register_signal_handler logger, service, opt[:pid]
+    
+          service.start
+          write_pidfile opt[:pid]
+          while service.alive?; sleep 3; end
+        }
+      else
         service = Service.new logger, conf
-  
-        register_signal_handler logger, service, opt[:pid]
-  
+        register_signal_handler logger, service
+
         service.start
-        write_pidfile opt[:pid]
         while service.alive?; sleep 3; end
-      }
+        exit 0
+      end
 
     rescue Exception => e
       $stderr.puts "--- ReliableMsg-Agent error! - #{e.message}"
@@ -80,21 +95,17 @@ module ReliableMsg::Agent #:nodoc:
       YAML.load(ERB.new(IO.read(conffile)).result)
     end
 
-    def change_privilege conf
-      user  = conf["user"]
+    def change_privilege user, group
       uid   = begin
-                Etc.getpwnam(user.to_s).uid
+                user ? Etc.getpwnam(user.to_s).uid : Process.euid
               rescue ArgumentError
                 raise "can't find user for #{user}"
               end
-      group = conf["group"]
       gid   = begin
-                Etc.getgrnam(group.to_s).gid
+                group ? Etc.getgrnam(group.to_s).gid : Process.egid
               rescue ArgumentError
                 raise "can't find group for #{group}"
               end
-
-      raise "Dont't run as root user." if uid == 0
 
       Process::Sys.setegid(gid)
       Process::Sys.seteuid(uid)
@@ -135,19 +146,19 @@ module ReliableMsg::Agent #:nodoc:
       }
     end
 
-    def register_signal_handler logger, service, pidfile
+    def register_signal_handler logger, service, pidfile = nil
       stopping = false
-      [:TERM].each { |sig|
+      [:INT, :TERM].each { |sig|
         Signal.trap(sig) {
           unless stopping
             begin
               stopping = true
               service.stop
-              File.unlink pidfile if File.exist? pidfile
+              File.unlink pidfile if pidfile and File.exist? pidfile
               exit! 0
 
             rescue Exception => e
-              File.unlink pidfile if File.exist? pidfile
+              File.unlink pidfile if pidfile and File.exist? pidfile
               logger.fatal { "ReliableMsg-Agent error! - #{e.message}" }
               logger.fatal { e.backtrace.join("\n\t") }
               exit! 1
@@ -162,7 +173,7 @@ module ReliableMsg::Agent #:nodoc:
     end
 
     def agent_definition deffile
-      Agent.class_eval open(deffile, "r") { |f| f.read }
+      Agent.class_eval open(deffile, "r") { |f| f.read } if deffile
     end
 
   end

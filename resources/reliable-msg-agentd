@@ -7,13 +7,15 @@
 prog=reliable-msg-agentd
 
 base=reliable-msg-agent
+user=root
+group=root
 cnf=/etc/reliable-msg-agent/agent.conf
 pid=/var/reliable-msg-agent/agent.pid
 log=/var/reliable-msg-agent/agent.log
 
 start() {
   echo $"Start ReliableMsg-Agent ..."
-  $base start -c $cnf -p $pid -l $log -d
+  $base start -u $user -g $group -c $cnf -p $pid -l $log -d
 }
 
 stop() {

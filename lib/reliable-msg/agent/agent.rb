@@ -2,6 +2,8 @@
 require "rubygems"
 require "reliable-msg/agent"
 
+require "yaml"
+
 module ReliableMsg::Agent #:nodoc:
   class Agent
     def initialize logger
@@ -20,7 +22,7 @@ module ReliableMsg::Agent #:nodoc:
     # +options+ :: the options (it is still unused.)
     #
     def call msg, conf, options = {}
-      raise AgentError, "#call(msg,conf,options={}) not implemented!"
+      @logger.info { "message received\n#{msg.to_yaml}" }
     end   
   end
 end

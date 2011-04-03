@@ -80,9 +80,10 @@ describe ReliableMsg::Agent::Service do
       @consumers = mock ReliableMsg::Agent::Consumers
       @consumers.stub!(:new).and_return @consumers
   
-      @consumers.stub!(:start)
-      @consumers.stub!(:stop)
-      @consumers.stub!(:alive?).and_return(true)
+      consumers_alive = false
+      @consumers.stub!(:start) { consumers_alive = true }
+      @consumers.stub!(:stop) { consumers_alive = false }
+      @consumers.stub!(:alive?).and_return { consumers_alive }
 
       ReliableMsg::Agent::Service.class_eval {
         public_class_method :dependency_classes
@@ -98,12 +99,27 @@ describe ReliableMsg::Agent::Service do
           exactly(1)
         ReliableMsg::Agent::Service.new @logger, @conf
       end
+
+      describe "#start" do
+        before do
+          @s = ReliableMsg::Agent::Service.new @logger, @conf
+        end
+
+        it "mockclass should receive #start exactly 1" do
+          @consumers.should_receive(:start).with(no_args).exactly(1)
+          @s.start
+        end
+
+        after do
+          @s.stop rescue nil
+          @s = nil
+        end
+      end
     end
   
     after do
       ReliableMsg::Agent::Service.dependency_classes_init
     end
   end
-
 end
 

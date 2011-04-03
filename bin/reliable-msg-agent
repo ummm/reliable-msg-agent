@@ -14,14 +14,23 @@ parsers["start"] = OptionParser.new { |parser|
   parser.on("-v", "--verbose", "Verbose output") {
     options[:verbose] = true
   }
+  parser.on("-d", "--daemon", "Daemon mode") {
+    options[:daemon] = true
+  }
+  parser.on("-u", "--user=USER", "Effective user name") { |v|
+    options[:user] = v
+  }
+  parser.on("-g", "--group=GROUP", "Effective group name") { |v|
+    options[:group] = v
+  }
   parser.on("-c", "--conf=CONFFILE", "Config file") { |v|
-    options[:conf] = v
+    options[:conf] = File.expand_path(v)
   }
-  parser.on("-l", "--log=LOGFILE", "Log file") { |v|
-    options[:log] = v
+  parser.on("-l", "--log=LOGFILE", "Log file (only for the daemon mode)") { |v|
+    options[:log] = File.expand_path(v)
   }
-  parser.on("-p", "--pid=PIDFILE", "PID file") { |v|
-    options[:pid] = v
+  parser.on("-p", "--pid=PIDFILE", "PID file (only for the daemon mode)") { |v|
+    options[:pid] = File.expand_path(v)
   }
 }
 parsers["stop"]  = OptionParser.new { |parser|
@@ -30,8 +39,8 @@ parsers["stop"]  = OptionParser.new { |parser|
   parser.on("-v", "--verbose", "Verbose output") {
     options[:verbose] = true
   }
-  parser.on("-p", "--pid=PIDFILE", "PID file (only for the daemon mode)") { |v|
-    options[:pid] = v
+  parser.on("-p", "--pid=PIDFILE", "PID file") { |v|
+    options[:pid] = File.expand_path(v)
   }
 }
 parsers.each { |k,v| parser = v
@@ -54,7 +63,13 @@ unless parsers.keys.include?(subcommand)
   $stderr.puts
   exit 1
 end
-parsers[subcommand].parse! ARGV
+
+begin
+  parsers[subcommand].parse! ARGV
+rescue
+  $stderr.puts parsers[subcommand].help
+  exit 1
+end
 
 require "reliable-msg/agent/scripts/script_runner"
 ReliableMsg::Agent::ScriptRunner.new.send subcommand.to_sym, options

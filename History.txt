@@ -1,4 +1,14 @@
 
+== 0.1.0 2011-04-04
+
+* Changed README.rdoc
+* Added testcase.
+* bugfix: The relative path was not correctly interpreted.
+* Added commandline option daemon mode(-d).
+* Added commandline option user(-u) and group(-g).
+* Removed "user" and "group" from configurations.
+* Changed "agent" config option changes arbitrarily from indispensability.
+
 == 0.0.3 2011-03-31
 
 * Added testcase for Service class.

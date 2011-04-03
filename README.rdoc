@@ -24,20 +24,153 @@ in A and processes it is taken.
       | Agent |  ...  + Agent +
       +-------+       +-------+
 
-== Getting started
+== Getting started 1
 
 === Install
 
  gem install reliable-msg-agent
 
-=== Set configuration file
+=== Start reliable-msg
 
-* {GEM_INSTALL_DIR}/resources/agent.conf
-  please arrange agent.conf in appropriate path.
-  (default: /etc/reliable-msg-agent/agent.conf)
-* {GEM_INSTALL_DIR}/resources/agent.rb
-  please arrange agent.conf in appropriate path.
-  (default: /etc/reliable-msg-agent/agent.rb)
+reliable-msg is started beforehand.
+
+ $ queues manager start
+ I, [2011-04-03T23:00:43.781875 #1856]  INFO -- : Created queues configuration file in: /usr/loc...
+ I, [2011-04-03T23:00:43.781875 #1856]  INFO -- : Using message store: disk
+ I, [2011-04-03T23:00:43.812875 #1856]  INFO -- : Accepting requests at: druby://localhost:6438
+
+=== Start reliable-msg-agent
+
+ $ reliable-msg-agent start
+ *** Starting ReliableMsg-Agent...
+ I, [2011-04-03T23:02:11.390875 #2724]  INFO -- : *** reliable-msg agent service starting...
+ I, [2011-04-03T23:02:11.390875 #2724]  INFO -- : --- starting workers.
+ I, [2011-04-03T23:02:11.452875 #2724]  INFO -- : *** reliable-msg agent service started.
+
+=== Push message to reliable-msg queue.
+
+The message "foo" is push to queue of reliable-msg.
+
+ $ irb -rubygems -rreliable-msg
+ irb(main):001:0> ReliableMsg::Queue.new("queue.agent").put("foo")
+  => "0d98c020-402a-012e-f635-000ae47391e2"
+ irb(main):002:0> exit
+ $
+
+=== The console that executes reliable-msg-agent is seen. 
+
+The message is acquired from reliable-msg, and the log is output. 
+
+ $ queues manager start
+ I, [2011-04-03T23:13:41.046875 #3860]  INFO -- : *** reliable-msg agent service starting...
+ I, [2011-04-03T23:13:41.046875 #3860]  INFO -- : --- starting workers.
+ I, [2011-04-03T23:13:41.093875 #3860]  INFO -- : *** reliable-msg agent service started.
+ I, [2011-04-03T23:14:24.280875 #3860]  INFO -- : message fetched - <9957e5a0-402a-012e-f635-000ae47391e2>
+ I, [2011-04-03T23:14:24.280875 #3860]  INFO -- : message received
+ --- !ruby/object:ReliableMsg::Message
+ headers:
+   :delivery: :best_effort
+   :max_deliveries: 5
+   :created: 1301840063
+   :id: 9957e5a0-402a-012e-f635-000ae47391e2
+   :expires:
+   :priority: 0
+ id: 9957e5a0-402a-012e-f635-000ae47391e2
+ object: foo
+
+== Getting started 2 - The behavior when the message is acquired is changed.
+
+Default operation of reliable-msg-agent is only a log output. 
+This can be changed. 
+
+=== Start reliable-msg
+
+reliable-msg is started beforehand.
+
+ $ queues manager start
+ I, [2011-04-03T23:00:43.781875 #1856]  INFO -- : Created queues configuration file in: /usr/loc...
+ I, [2011-04-03T23:00:43.781875 #1856]  INFO -- : Using message store: disk
+ I, [2011-04-03T23:00:43.812875 #1856]  INFO -- : Accepting requests at: druby://localhost:6438
+
+=== Preparation for configuration file
+
+The file /etc/reliable-msg-agent.conf of the following content is prepared. 
+
+ # /etc/reliable-msg-agent.conf
+ ---
+ agent: /etc/reliable-msg-agent.rb
+ consumers:
+   -
+     source_uri: druby://localhost:6438
+     every: 1.0
+     target: queue.agent
+     threads: 1
+
+In addition, the file /etc/reliable-msg-agent.rb of the following content is prepared.
+Here, the directory specified by the message is made.
+
+ # /etc/reliable-msg-agnet.rb
+ require "fileutils"
+
+ # The method of processing the message is defined.
+ #
+ # if the evaluation result is nil or false,
+ # it is considered that it failes.
+ #
+ # === Args
+ #
+ # +msg+     :: fetched message from reliable-msg queue.
+ # +conf+    :: consumer configurations.
+ # +options+ :: the options (it is still unused.)
+ #
+ def call msg, conf, options = {}
+   dir = File.join "/tmp", msg.object
+   FileUtils.mkdir_p dir
+   @logger.info { "directory created - #{dir}" }
+ end
+
+=== Start reliable-msg-agent
+
+The configuration file is specified by commandline option.
+
+ $ reliable-msg-agent start -c /etc/reliable-msg-agent.conf
+ *** Starting ReliableMsg-Agent...
+ I, [2011-04-04T00:06:23.759875 #1804]  INFO -- : *** reliable-msg agent service starting...
+ I, [2011-04-04T00:06:23.759875 #1804]  INFO -- : --- starting workers.
+ I, [2011-04-04T00:06:23.783875 #1804]  INFO -- : *** reliable-msg agent service started.
+
+=== Push message to reliable-msg queue.
+
+The message "foo" and "bar" are push to queue of reliable-msg.
+
+ $ irb -rubygems -rreliable-msg
+ irb(main):001:0> ReliableMsg::Queue.new("queue.agent").put("foo")
+  => "f19aadd0-4032-012e-f635-000ae47391e2"
+ irb(main):002:0> ReliableMsg::Queue.new("queue.agent").put("bar")
+  => "f3c33320-4032-012e-f635-000ae47391e2"
+ irb(main):003:0> exit
+ $
+
+=== The console that executes reliable-msg-agent is seen. 
+
+The message is acquired from reliable-msg, and directory was made.
+
+ $ reliable-msg-agent start -c /etc/reliable-msg-agent.conf
+ *** Starting ReliableMsg-Agent...
+ I, [2011-04-04T00:06:23.759875 #1804]  INFO -- : *** reliable-msg agent service starting...
+ I, [2011-04-04T00:06:23.759875 #1804]  INFO -- : --- starting workers.
+ I, [2011-04-04T00:06:23.783875 #1804]  INFO -- : *** reliable-msg agent service started.
+ I, [2011-04-04T00:14:07.921875 #1804]  INFO -- : message fetched - <f19aadd0-4032-012e-f635-000ae47391e2>
+ I, [2011-04-04T00:14:07.936875 #1804]  INFO -- : directory created - /tmp/foo
+ I, [2011-04-04T00:14:11.102875 #1804]  INFO -- : message fetched - <f3c33320-4032-012e-f635-000ae47391e2>
+ I, [2011-04-04T00:14:11.106875 #1804]  INFO -- : directory created - /tmp/bar
+
+ $ ls -l /tmp/{foo,bar}
+ /tmp/bar:
+ total 0
+
+ /tmp/foo:
+ total 0
 
 == Reliable-msg-agent commands
 
@@ -51,20 +184,29 @@ in A and processes it is taken.
  $ reliable-msg-agent start --help
  Usage: reliable-msg-agent start [options]
      -v, --verbose                    Verbose output
+     -d, --daemon                     Daemon mode
+     -u, --user=USER                  Effective user name
+     -g, --group=GROUP                Effective group name
      -c, --conf=CONFFILE              Config file
-     -l, --log=LOGFILE                Log file
-     -p, --pid=PIDFILE                PID file
+     -l, --log=LOGFILE                Log file (only for the daemon mode)
+     -p, --pid=PIDFILE                PID file (only for the daemon mode)
      -h, --help                       Show this message
          --version                    Show version
 
 * -v, --verbose
   verbose output.
+* -d, --daemon
+  daemon mode.
+* -u, --user
+  effective user name (The authority of seteuid is necessary.)
+* -g, --group
+  effective group name (The authority of setegid is necessary.)
 * -c, --conf=CONFFILE
-  path for config file. default is /etc/reliable-msg-agent/agent.conf
+  path for config file. default is {GEM_INSTALL_DIR}/resources/agent.conf
 * -l, --log=LOGFILE
-  path for log file. default is /var/reliable-msg-agent/agent.log
+  path for log file. default is /var/reliable-msg-agent/agent.log (only for the daemon mode)
 * -p, --pid=PIDFILE
-  path for pid file. default is /var/reliable-msg-agent/agent.pid
+  path for pid file. default is /var/reliable-msg-agent/agent.pid (only for the daemon mode)
 * -h, --help
   show this message.
 * --version
@@ -75,7 +217,7 @@ in A and processes it is taken.
  $ reliable-msg-agent stop --help
  Usage: reliable-msg-agent stop [options]
      -v, --verbose                    Verbose output
-     -p, --pid=PIDFILE                PID file (only for the daemon mode)
+     -p, --pid=PIDFILE                PID file
      -h, --help                       Show this message
          --version                    Show version
 
